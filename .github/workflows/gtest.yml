@@ -24,4 +24,4 @@ jobs:
           make gtest_run
 
       - name: Run tests
-        run: bin/gtest_run
+        run: gtest_run
