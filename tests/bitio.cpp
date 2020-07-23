@@ -184,4 +184,42 @@ TEST(BitioTest, write_test_1) {
     ASSERT_EQ(stream->read(64), 0xffff);
 }
 
+TEST(BitioTest, write_test_2) {
+    FILE *file = fopen("bitio_test.dat", "wb");
+
+    auto stream = new bitio::stream(file, 1);
+    for (int i = 0; i < 1024; i++) {
+        stream->write(i % 256, 12 + (i % 32));
+    }
+
+    stream->flush();
+    stream->close();
+
+    file = fopen("bitio_test.dat", "rb");
+    stream = new bitio::stream(file, 1);
+
+    for (int i = 0; i < 1024; i++) {
+        ASSERT_EQ(stream->read(12 + (i % 32)), i % 256);
+    }
+}
+
+TEST(BitioTest, write_test_3) {
+    FILE *file = fopen("bitio_test.dat", "wb");
+
+    auto stream = new bitio::stream(file, 1);
+    for (int i = 0; i < 128; i++) {
+        stream->write(i % 256, 64);
+    }
+
+    stream->flush();
+    stream->close();
+
+    file = fopen("bitio_test.dat", "rb");
+    stream = new bitio::stream(file, 1);
+
+    for (int i = 0; i < 128; i++) {
+        ASSERT_EQ(stream->read(64), i % 256);
+    }
+}
+
 
