@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 #include <bitio.h>
 
-class BitioTest: testing::Test {};
+class BitioTest : testing::Test {
+};
 
 TEST(BitioTest, read_test_1) {
     // Create sample file
@@ -161,6 +162,26 @@ TEST(BitioTest, read_exception_pos_test) {
     }
 
     ASSERT_TRUE(flag);
+}
+
+TEST(BitioTest, write_test_1) {
+    FILE *file = fopen("bitio_test.dat", "wb");
+
+    auto stream = new bitio::stream(file, 1024);
+    stream->write(4, 8);
+    stream->write(10, 5);
+    stream->write(0xffff, 16);
+    stream->write(0xffff, 64);
+    stream->flush();
+    stream->close();
+
+    file = fopen("bitio_test.dat", "rb");
+    stream = new bitio::stream(file, 2);
+
+    ASSERT_EQ(stream->read(8), 4);
+    ASSERT_EQ(stream->read(5), 10);
+    ASSERT_EQ(stream->read(16), 0xffff);
+    ASSERT_EQ(stream->read(64), 0xffff);
 }
 
 

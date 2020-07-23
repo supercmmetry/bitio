@@ -82,14 +82,12 @@ uint64_t bitio::stream::read(uint8_t n) {
 
 
     while (nbytes > 0) {
-        value <<= 0x8;
-        value += buffer[index];
-
         if (index == size) {
             load_buffer();
-        } else {
-            index++;
         }
+
+        value <<= 0x8;
+        value += buffer[index++];
 
         nbytes--;
     }
@@ -142,6 +140,65 @@ void bitio::stream::check_eof() {
     }
 }
 
+void bitio::stream::close() {
+    if (file != nullptr) {
+        fclose(file);
+    }
 
+    free(buffer);
+}
+
+void bitio::stream::write(uint64_t obj, uint8_t n) {
+    if (n == 0) {
+        return;
+    }
+
+    if (n > 0x40) {
+        throw bitio_exception("Write operations can only support upto 64-bits.");
+    }
+
+    obj <<= 0x40 - n;
+
+    sync_rw_buffer();
+
+    for (uint8_t i = 0; i < n; i++) {
+        uint8_t bit = (obj & ui64_single_bit_masks[0x3f - i]) >> (0x3f - i);
+        bit_set >>= (8 - bit_count);
+        bit_set <<= 1;
+        bit_set += bit;
+        bit_count++;
+        bit_set <<= (8 - bit_count);
+        buffer[index] = bit_set;
+
+        sync_rw_buffer();
+    }
+
+}
+
+void bitio::stream::sync_rw_buffer() {
+    if (bit_count == 8) {
+        if (index == max_size - 1) {
+            fwrite(buffer, 1, max_size, file);
+            load_buffer();
+            index = 0;
+            bit_set = buffer[0];
+            bit_count = 0;
+        } else {
+            index++;
+            bit_set = buffer[index];
+            bit_count = 0;
+        }
+    }
+}
+
+void bitio::stream::flush() {
+    if (file != nullptr) {
+        if (bit_count == 0) {
+            fwrite(buffer, 1, index, file);
+        } else {
+            fwrite(buffer, 1, index + 1, file);
+        }
+    }
+}
 
 

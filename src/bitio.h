@@ -42,6 +42,8 @@ namespace bitio {
                                             0x200000000000000, 0x400000000000000, 0x800000000000000, 0x1000000000000000,
                                             0x2000000000000000, 0x4000000000000000, 0x8000000000000000};
 
+    const uint64_t u64_h8_mask = 0xff00000000000000;
+
     class bitio_exception : public std::exception {
     private:
         std::string msg;
@@ -67,6 +69,8 @@ namespace bitio {
         uint64_t head = 0;
 
         void load_buffer();
+
+        void sync_rw_buffer();
 
         void load_byte();
 
