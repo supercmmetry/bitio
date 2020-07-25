@@ -68,9 +68,10 @@ uint64_t bitio::stream::read(uint8_t n) {
     if (ctx == 3) {
         if (bit_count == 0) {
             bit_count = 8;
-            bit_set = buffer[index];
         }
     }
+
+    bit_set = buffer[index] << (8 - bit_count);
 
     ctx = 1;
 
@@ -164,6 +165,10 @@ void bitio::stream::write(uint64_t obj, uint8_t n) {
 
     if (n > 0x40) {
         throw bitio_exception("Write operations can only support upto 64-bits.");
+    }
+
+    if (ctx == 1 || ctx == 3) {
+        bit_set = buffer[index];
     }
 
     ctx = 2;
