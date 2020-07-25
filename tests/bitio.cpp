@@ -1,8 +1,7 @@
 #include <gtest/gtest.h>
 #include <bitio.h>
 
-class BitioTest : testing::Test {
-};
+class BitioTest : testing::Test {};
 
 TEST(BitioTest, read_test_1) {
     // Create sample file
@@ -74,7 +73,7 @@ TEST(BitioTest, read_test_3) {
 
     file = fopen("bitio_test.dat", "rb");
 
-    auto stream = new bitio::stream(file, 2);
+    auto stream = new bitio::stream(file, false, 2);
 
     int count = 2;
     for (int i = 0; i < count; i++) {
@@ -99,7 +98,7 @@ TEST(BitioTest, read_test_4) {
 
     file = fopen("bitio_test.dat", "rb");
 
-    auto stream = new bitio::stream(file, 32);
+    auto stream = new bitio::stream(file, false, 1);
 
     for (int i = 0; i < 32; i++) {
         stream->read(64);
@@ -146,7 +145,7 @@ TEST(BitioTest, read_exception_pos_test) {
 
     file = fopen("bitio_test.dat", "rb");
 
-    auto stream = new bitio::stream(file, 2);
+    auto stream = new bitio::stream(file, false,2);
 
     int count = 2;
     for (int i = 0; i < count; i++) {
@@ -167,7 +166,7 @@ TEST(BitioTest, read_exception_pos_test) {
 TEST(BitioTest, write_test_1) {
     FILE *file = fopen("bitio_test.dat", "wb");
 
-    auto stream = new bitio::stream(file, 1024);
+    auto stream = new bitio::stream(file, true, 1024);
     stream->write(4, 8);
     stream->write(10, 5);
     stream->write(0xffff, 16);
@@ -176,7 +175,7 @@ TEST(BitioTest, write_test_1) {
     stream->close();
 
     file = fopen("bitio_test.dat", "rb");
-    stream = new bitio::stream(file, 2);
+    stream = new bitio::stream(file, false,2);
 
     ASSERT_EQ(stream->read(8), 4);
     ASSERT_EQ(stream->read(5), 10);
@@ -187,7 +186,7 @@ TEST(BitioTest, write_test_1) {
 TEST(BitioTest, write_test_2) {
     FILE *file = fopen("bitio_test.dat", "wb");
 
-    auto stream = new bitio::stream(file, 1);
+    auto stream = new bitio::stream(file, true, 1);
     for (int i = 0; i < 1024; i++) {
         stream->write(i % 256, 12 + (i % 32));
     }
@@ -196,7 +195,7 @@ TEST(BitioTest, write_test_2) {
     stream->close();
 
     file = fopen("bitio_test.dat", "rb");
-    stream = new bitio::stream(file, 1);
+    stream = new bitio::stream(file, false,1);
 
     for (int i = 0; i < 1024; i++) {
         ASSERT_EQ(stream->read(12 + (i % 32)), i % 256);
@@ -206,7 +205,7 @@ TEST(BitioTest, write_test_2) {
 TEST(BitioTest, write_test_3) {
     FILE *file = fopen("bitio_test.dat", "wb");
 
-    auto stream = new bitio::stream(file, 1);
+    auto stream = new bitio::stream(file, true,13);
     for (int i = 0; i < 128; i++) {
         stream->write(i % 256, 64);
     }
@@ -215,11 +214,70 @@ TEST(BitioTest, write_test_3) {
     stream->close();
 
     file = fopen("bitio_test.dat", "rb");
-    stream = new bitio::stream(file, 1);
+    stream = new bitio::stream(file, false,19);
 
     for (int i = 0; i < 128; i++) {
         ASSERT_EQ(stream->read(64), i % 256);
     }
 }
+
+TEST(BitioTest, seek_test_1) {
+    remove("bitio_test.dat");
+    FILE *file = fopen("bitio_test.dat", "w+");
+    auto stream = new bitio::stream(file, true, 1);
+    stream->write(0xfeff, 16);
+    stream->seek(-0x8);
+    stream->flush();
+    ASSERT_EQ(stream->read(0x8), 0xff);
+}
+
+TEST(BitioTest, seek_test_2) {
+    remove("bitio_test.dat");
+    FILE *file = fopen("bitio_test.dat", "w+");
+    auto stream = new bitio::stream(file, true, 1);
+    stream->write(0xffff, 16);
+    stream->seek(-0x1);
+    stream->seek(-0x7);
+    stream->seek(0x8);
+    stream->seek(-0x8);
+
+    ASSERT_EQ(stream->read(0x8), 0xff);
+}
+
+TEST(BitioTest, seek_rw_test_1) {
+    remove("bitio_test.dat");
+
+    FILE *file = fopen("bitio_test.dat", "w+");
+    auto stream = new bitio::stream(file, true, 100);
+    stream->write(0xfff3, 16);
+    stream->seek(-0x8);
+    stream->write(0xfe, 0x8);
+    stream->seek(-0x8);
+    stream->flush();
+
+    ASSERT_EQ(stream->read(0x8), 0xfe);
+}
+
+TEST(BitioTest, seek_rw_test_2) {
+    remove("bitio_test.dat");
+    FILE *file = fopen("bitio_test.dat", "w+");
+    auto stream = new bitio::stream(file, true, 100);
+
+    stream->write(0xff, 12);
+    stream->flush();
+    stream->seek(-1);
+    stream->seek(-11);
+    ASSERT_EQ(stream->read(12), 0xff);
+
+    stream->write(0xff, 10);
+    stream->seek(-10);
+    stream->write(0xfe, 10);
+    stream->flush();
+
+    stream->seek(-10);
+    ASSERT_EQ(stream->read(10), 0xfe);
+}
+
+
 
 

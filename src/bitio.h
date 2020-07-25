@@ -9,7 +9,7 @@
 #define BITIO_BUFFER_SIZE 0x400
 
 namespace bitio {
-    const size_t ui64_single_bit_masks[] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800,
+    const uint64_t ui64_single_bit_masks[] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800,
                                             0x1000,
                                             0x2000, 0x4000, 0x8000, 0x10000, 0x20000, 0x40000, 0x80000, 0x100000,
                                             0x200000,
@@ -34,7 +34,6 @@ namespace bitio {
         [[nodiscard]] const char *what() const noexcept override;
     };
 
-
     class stream {
     private:
         FILE *file = nullptr;
@@ -46,7 +45,9 @@ namespace bitio {
         uint8_t bit_set = 0;
         uint8_t bit_count = 0;
         uint64_t stream_size = 0;
-        uint64_t head = 0;
+        int64_t head = 0;
+        bool is_writeable = false;
+        uint8_t ctx = 0;
 
         void load_buffer();
 
@@ -56,9 +57,24 @@ namespace bitio {
 
         void evaluate_stream_size();
 
-        void check_eof();
+        void forward_seek(uint8_t n);
+
+        void check_eof(int64_t shift);
+
+        void check_sof(int64_t shift);
+
+        void next(uint64_t nbytes);
+
+        void back(uint64_t nbytes);
+
+        void set(uint8_t byte);
+
+        void try_read_init();
+
+        void s_head();
+
     public:
-        stream(FILE *file, uint64_t buffer_size = BITIO_BUFFER_SIZE);
+        stream(FILE *file, bool is_writeable = false, uint64_t buffer_size = BITIO_BUFFER_SIZE);
 
         stream(uint8_t *raw, uint64_t buffer_size);
 
@@ -66,9 +82,9 @@ namespace bitio {
 
         void write(uint64_t obj, uint8_t n);
 
-        void seek(uint64_t n);
+        void seek(int64_t n);
 
-        uint64_t get_stream_size() const;
+        [[nodiscard]] uint64_t get_stream_size() const;
 
         void flush();
 
