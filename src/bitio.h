@@ -36,6 +36,15 @@ namespace bitio {
 
     class stream {
     private:
+        enum BITIO_CONTEXT {
+            EMPTY = 0,
+            READ = 1,
+            WRITE = 2,
+            SEEK = 3,
+            SEEK_ZERO = 4,
+            INVALID = 255
+        };
+
         FILE *file = nullptr;
         uint8_t *buffer = nullptr;
         uint64_t index = 0;
@@ -47,7 +56,7 @@ namespace bitio {
         uint64_t stream_size = 0;
         int64_t head = 0;
         bool is_writeable = false;
-        uint8_t ctx = 0;
+        BITIO_CONTEXT ctx = EMPTY;
 
         void load_buffer();
 
@@ -72,6 +81,7 @@ namespace bitio {
         void try_read_init();
 
         void s_head();
+
 
     public:
         stream(FILE *file, bool is_writeable = false, uint64_t buffer_size = BITIO_BUFFER_SIZE);
