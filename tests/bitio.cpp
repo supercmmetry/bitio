@@ -369,7 +369,7 @@ TEST(BitioTest, seek_rw_test_8) {
     remove("bitio_test.dat");
 
     FILE *file = fopen("bitio_test.dat", "w+");
-    auto stream = new bitio::stream(file, true, 3);
+    auto stream = new bitio::stream(file, true, 1);
 
     for (int i = 0; i < 2; i++) {
         stream->write(i, 8);
@@ -379,6 +379,29 @@ TEST(BitioTest, seek_rw_test_8) {
     stream->seek(-14);
 
     ASSERT_EQ(stream->read(15), 1);
+}
+
+TEST(BitioTest, rw_test_1) {
+    remove("bitio_test.dat");
+
+    FILE *file = fopen("bitio_test.dat", "w+");
+    auto stream = new bitio::stream(file, true);
+
+    stream->write(0xff, 8);
+    stream->write(0xfe, 8);
+    stream->write(0xfc, 8);
+    stream->flush();
+    stream->close();
+
+    file = fopen("bitio_test.dat", "rb+");
+    stream = new bitio::stream(file, true);
+
+    stream->write(0x01, 8);
+    ASSERT_EQ(stream->read(8), 0xfe);
+    stream->write(0x02, 8);
+
+    stream->flush();
+    stream->close();
 }
 
 

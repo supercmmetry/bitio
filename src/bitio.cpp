@@ -25,6 +25,9 @@ bitio::stream::stream(FILE *file, bool is_writeable, uint64_t buffer_size) {
         evaluate_stream_size();
     }
 
+    fread(buffer, 1, max_size, file);
+    fseek(file, 0, SEEK_SET);
+
     head = 0x0;
     ctx = EMPTY;
 }
@@ -65,7 +68,7 @@ uint64_t bitio::stream::read(uint8_t n) {
     try_read_init();
 
     // Consider seek context.
-    if (ctx == SEEK) {
+    if (ctx == SEEK || ctx == WRITE) {
         if (bit_count == 0) {
             bit_count = 8;
         } else {
@@ -170,6 +173,10 @@ void bitio::stream::write(uint64_t obj, uint8_t n) {
 
     if (ctx != WRITE) {
         bit_set = buffer[index];
+
+        if (ctx == READ) {
+            bit_count = 8 - bit_count;
+        }
 
         if (bit_count > 0 && index == size - 1) {
             fseek(file, -size, SEEK_CUR);
