@@ -253,7 +253,6 @@ TEST(BitioTest, seek_rw_test_1) {
     stream->seek(-0x8);
     stream->write(0xfe, 0x8);
     stream->seek(-0x8);
-    stream->flush();
 
     ASSERT_EQ(stream->read(0x8), 0xfe);
 }
@@ -264,7 +263,6 @@ TEST(BitioTest, seek_rw_test_2) {
     auto stream = new bitio::stream(file, true, 100);
 
     stream->write(0xff, 12);
-    stream->flush();
     stream->seek(-1);
     stream->seek(-11);
     ASSERT_EQ(stream->read(12), 0xff);
@@ -272,8 +270,6 @@ TEST(BitioTest, seek_rw_test_2) {
     stream->write(0xff, 10);
     stream->seek(-10);
     stream->write(0xfe, 10);
-    stream->flush();
-
     stream->seek(-10);
     ASSERT_EQ(stream->read(10), 0xfe);
 }
@@ -284,16 +280,13 @@ TEST(BitioTest, seek_rw_test_3) {
     auto stream = new bitio::stream(file, true, 1);
 
     stream->write(0xff, 12);
-    stream->flush();
     stream->seek(-1);
     stream->seek(-11);
     ASSERT_EQ(stream->read(12), 0xff);
 
     stream->write(0xff, 10);
-    stream->flush();
     stream->seek(-10);
     stream->write(0xfe, 10);
-    stream->flush();
     stream->seek(-10);
     ASSERT_EQ(stream->read(10), 0xfe);
 }
@@ -304,18 +297,38 @@ TEST(BitioTest, seek_rw_test_4) {
     auto stream = new bitio::stream(file, true, 2);
 
     stream->write(0xff, 12);
-    stream->flush();
     stream->seek(-1);
     stream->seek(-11);
     ASSERT_EQ(stream->read(12), 0xff);
 
     stream->write(0xff, 10);
-    stream->flush();
     stream->seek(-10);
     stream->write(0xfe, 10);
-    stream->flush();
     stream->seek(-10);
     ASSERT_EQ(stream->read(10), 0xfe);
+}
+
+TEST(BitioTest, seek_rw_test_5) {
+    remove("bitio_test.dat");
+
+    FILE *file = fopen("bitio_test.dat", "w+");
+    auto stream = new bitio::stream(file, true, 2);
+
+    stream->write(1234, 11);
+    stream->seek(-3);
+    stream->seek(-5);
+    stream->read(1);
+    stream->seek(-2);
+
+    ASSERT_EQ(stream->read(11), 1234);
+
+    stream->flush();
+    stream->close();
+
+    file = fopen("bitio_test.dat", "rb+");
+    stream = new bitio::stream(file, false, 1);
+
+    ASSERT_EQ(stream->read(11), 1234);
 }
 
 

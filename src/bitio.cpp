@@ -222,6 +222,10 @@ void bitio::stream::seek(int64_t n) {
     if (n == 0) {
         return;
     }
+    // Prevent data-loss while doing seek operations
+    if (ctx == WRITE && index == 0) {
+        flush();
+    }
 
     s_head();
     ctx = SEEK;
@@ -263,12 +267,19 @@ void bitio::stream::forward_seek(uint8_t n) {
         return;
     }
 
-    if (n > 0x40) {
-        throw bitio_exception("Read operations can only support upto 64-bits.");
+    s_head();
+    try_read_init();
+
+    // Consider seek context.
+    if (ctx == SEEK) {
+        if (bit_count == 0) {
+            bit_count = 8;
+        }
     }
 
+    bit_set = buffer[index] << (8 - bit_count);
 
-    try_read_init();
+    ctx = READ;
 
     check_eof(n);
 
@@ -281,6 +292,7 @@ void bitio::stream::forward_seek(uint8_t n) {
     if (n <= bit_count) {
         bit_set <<= n;
         bit_count -= n;
+        return;
     }
 
     auto nbytes = n >> 3;
@@ -293,6 +305,7 @@ void bitio::stream::forward_seek(uint8_t n) {
         next(1);
     } else {
         nbits += 8 - bit_count;
+
         nbytes += nbits >> 3;
         nbits = nbits & 7;
 
@@ -305,7 +318,6 @@ void bitio::stream::forward_seek(uint8_t n) {
 
     bit_set = buffer[index];
     bit_count = 8;
-
     bit_set <<= nbits;
     bit_count -= nbits;
 }
