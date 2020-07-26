@@ -382,10 +382,8 @@ TEST(BitioTest, seek_rw_test_8) {
 }
 
 TEST(BitioTest, rw_test_1) {
-    remove("bitio_test.dat");
-
     FILE *file = fopen("bitio_test.dat", "w+");
-    auto stream = new bitio::stream(file, true);
+    auto stream = new bitio::stream(file, true, 1);
 
     stream->write(0xff, 8);
     stream->write(0xfe, 8);
