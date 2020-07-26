@@ -298,6 +298,26 @@ TEST(BitioTest, seek_rw_test_3) {
     ASSERT_EQ(stream->read(10), 0xfe);
 }
 
+TEST(BitioTest, seek_rw_test_4) {
+    remove("bitio_test.dat");
+    FILE *file = fopen("bitio_test.dat", "w+");
+    auto stream = new bitio::stream(file, true, 2);
+
+    stream->write(0xff, 12);
+    stream->flush();
+    stream->seek(-1);
+    stream->seek(-11);
+    ASSERT_EQ(stream->read(12), 0xff);
+
+    stream->write(0xff, 10);
+    stream->flush();
+    stream->seek(-10);
+    stream->write(0xfe, 10);
+    stream->flush();
+    stream->seek(-10);
+    ASSERT_EQ(stream->read(10), 0xfe);
+}
+
 
 
 

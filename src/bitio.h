@@ -41,7 +41,6 @@ namespace bitio {
             READ = 1,
             WRITE = 2,
             SEEK = 3,
-            SEEK_ZERO = 4,
             INVALID = 255
         };
 
