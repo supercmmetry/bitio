@@ -318,7 +318,7 @@ TEST(BitioTest, seek_rw_test_5) {
     stream->seek(-3);
     stream->seek(-5);
     stream->read(1);
-    stream->seek(-2);
+    stream->seek(-4);
 
     ASSERT_EQ(stream->read(11), 1234);
 
@@ -329,6 +329,56 @@ TEST(BitioTest, seek_rw_test_5) {
     stream = new bitio::stream(file, false, 1);
 
     ASSERT_EQ(stream->read(11), 1234);
+}
+
+TEST(BitioTest, seek_rw_test_6) {
+    remove("bitio_test.dat");
+
+    FILE *file = fopen("bitio_test.dat", "w+");
+    auto stream = new bitio::stream(file, true, 1);
+
+    stream->write(1234, 11);
+    stream->seek(-3);
+    stream->seek(-5);
+    stream->write(0xff, 0x8);
+    stream->seek(-1);
+    stream->write(0x0, 0x1);
+    stream->seek(-8);
+
+    ASSERT_EQ(stream->read(8), 0xfe);
+}
+
+TEST(BitioTest, seek_rw_test_7) {
+    remove("bitio_test.dat");
+
+    FILE *file = fopen("bitio_test.dat", "w+");
+    auto stream = new bitio::stream(file, true, 10);
+
+    stream->write(1234, 11);
+    stream->seek(-3);
+    stream->seek(-5);
+    stream->write(0xff, 0x8);
+    stream->seek(-1);
+    stream->write(0x0, 0x1);
+    stream->seek(-8);
+
+    ASSERT_EQ(stream->read(8), 0xfe);
+}
+
+TEST(BitioTest, seek_rw_test_8) {
+    remove("bitio_test.dat");
+
+    FILE *file = fopen("bitio_test.dat", "w+");
+    auto stream = new bitio::stream(file, true, 3);
+
+    for (int i = 0; i < 2; i++) {
+        stream->write(i, 8);
+        stream->seek(-1);
+    }
+
+    stream->seek(-14);
+
+    ASSERT_EQ(stream->read(15), 1);
 }
 
 

@@ -68,6 +68,8 @@ uint64_t bitio::stream::read(uint8_t n) {
     if (ctx == SEEK) {
         if (bit_count == 0) {
             bit_count = 8;
+        } else {
+            bit_count = 8 - bit_count;
         }
     }
 
@@ -76,7 +78,6 @@ uint64_t bitio::stream::read(uint8_t n) {
     ctx = READ;
 
     check_eof(n);
-
 
     uint64_t value = 0;
     if (bit_count == 0) {
@@ -243,6 +244,7 @@ void bitio::stream::seek(int64_t n) {
     }
 
     n = -n;
+
     uint64_t nbytes = n >> 0x3;
     uint8_t nbits = n & 0x7;
 

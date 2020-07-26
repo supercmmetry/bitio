@@ -59,10 +59,6 @@ namespace bitio {
 
         void load_buffer();
 
-        void sync_rw_buffer();
-
-        void load_byte();
-
         void evaluate_stream_size();
 
         void forward_seek(uint8_t n);
@@ -80,7 +76,6 @@ namespace bitio {
         void try_read_init();
 
         void s_head();
-
 
     public:
         stream(FILE *file, bool is_writeable = false, uint64_t buffer_size = BITIO_BUFFER_SIZE);
