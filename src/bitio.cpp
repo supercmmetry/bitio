@@ -50,8 +50,6 @@ void bitio::stream::load_buffer() {
         if (is_writeable) {
             size = max_size;
         }
-    } else {
-        throw bitio_exception("Invalid operation on memory buffer");
     }
 }
 
