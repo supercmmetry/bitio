@@ -402,6 +402,22 @@ TEST(BitioTest, rw_test_1) {
     stream->close();
 }
 
+TEST(BitioTest, rw_test_2) {
+    FILE *file = fopen("bitio_test.dat", "w+");
+    auto stream = new bitio::stream(file, true, 1);
+
+    stream->write(0xfffefdfc, 32);
+    stream->seek(-32);
+    ASSERT_EQ(stream->read(0x8), 0xff);
+    stream->seek(-8);
+    ASSERT_EQ(stream->read(0x8), 0xff);
+    ASSERT_EQ(stream->read(0x8), 0xfe);
+    stream->seek(-4);
+    ASSERT_EQ(stream->read(0x4), 0xe);
+    stream->seek(0x8);
+    ASSERT_EQ(stream->read(0x8), 0xfc);
+}
+
 
 
 

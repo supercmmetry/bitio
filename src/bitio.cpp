@@ -64,13 +64,9 @@ uint64_t bitio::stream::read(uint8_t n) {
 
     try_read_init();
 
-    // Consider seek context.
+    // Transform from SW-Domain to R-Domain.
     if (ctx == SEEK || ctx == WRITE) {
-        if (bit_count == 0) {
-            bit_count = 8;
-        } else {
-            bit_count = 8 - bit_count;
-        }
+        bit_count = 8 - bit_count;
     }
 
     bit_set = buffer[index] << (8 - bit_count);
@@ -90,6 +86,12 @@ uint64_t bitio::stream::read(uint8_t n) {
         value = bit_set >> (8 - n);
         bit_set <<= n;
         bit_count -= n;
+
+        if (bit_count == 0) {
+            bit_count = 8;
+            next(1);
+        }
+
         return value;
     }
 
@@ -300,6 +302,12 @@ void bitio::stream::forward_seek(uint8_t n) {
     if (n <= bit_count) {
         bit_set <<= n;
         bit_count -= n;
+
+        if (bit_count == 0) {
+            bit_count = 8;
+            next(1);
+        }
+
         return;
     }
 
