@@ -64,7 +64,6 @@ uint64_t bitio::stream::read(uint8_t n) {
         throw bitio_exception("Read operations can only support upto 64-bits.");
     }
 
-    s_head();
     try_read_init();
 
     // Consider seek context.
@@ -149,7 +148,7 @@ void bitio::stream::evaluate_stream_size() {
 }
 
 void bitio::stream::check_eof(int64_t shift) {
-    if ((head + shift > (stream_size << 3))) {
+    if (((head << 3) + shift > (stream_size << 3))) {
         throw bitio_exception("EOF encountered.");
     }
 }
@@ -186,7 +185,6 @@ void bitio::stream::write(uint64_t obj, uint8_t n) {
 
     ctx = WRITE;
 
-    s_head();
     check_eof(n);
 
     obj <<= 0x40 - n;
@@ -242,7 +240,6 @@ void bitio::stream::seek(int64_t n) {
         bit_count = 8 - bit_count;
     }
 
-    s_head();
     ctx = SEEK;
 
     if (n > 0) {
@@ -283,7 +280,6 @@ void bitio::stream::forward_seek(uint8_t n) {
         return;
     }
 
-    s_head();
     try_read_init();
 
     // Transform from SW-Domain to R-Domain.
@@ -339,7 +335,7 @@ void bitio::stream::forward_seek(uint8_t n) {
 }
 
 void bitio::stream::check_sof(int64_t shift) {
-    if (head - shift + bit_count < 0) {
+    if ((head << 3) - shift + bit_count < 0) {
         throw bitio_exception("SOF reached.");
     }
 }
@@ -357,7 +353,7 @@ void bitio::stream::next(uint64_t nbytes) {
             bit_set = buffer[index] << (8 - bit_count);
         }
 
-        head += 0x8;
+        head += 1;
     }
 }
 
@@ -366,7 +362,7 @@ void bitio::stream::back(uint64_t nbytes) {
 
     while (nbytes--) {
         if (index == 0) {
-            auto offset = (head >> 3) - (int64_t) size;
+            auto offset = head - (int64_t) size;
             if (offset < 0) {
                 fseek(file, 0, SEEK_SET);
                 // ctx = SEEK_ZERO;
@@ -380,8 +376,7 @@ void bitio::stream::back(uint64_t nbytes) {
             index--;
         }
 
-        head -= 0x8;
-        s_head();
+        head -= 1;
     }
 }
 
@@ -397,7 +392,7 @@ void bitio::stream::set(uint8_t byte) {
         bit_set = buffer[index];
     }
 
-    head += 0x8;
+    head += 1;
 
 }
 
@@ -408,12 +403,6 @@ void bitio::stream::try_read_init() {
         bit_set = buffer[0];
         bit_count = 8;
         ctx = INVALID;
-    }
-}
-
-void bitio::stream::s_head() {
-    if (head < 0) {
-        head = 0;
     }
 }
 

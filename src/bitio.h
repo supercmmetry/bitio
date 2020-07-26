@@ -75,8 +75,6 @@ namespace bitio {
 
         void try_read_init();
 
-        void s_head();
-
     public:
         stream(FILE *file, bool is_writeable = false, uint64_t buffer_size = BITIO_BUFFER_SIZE);
 
