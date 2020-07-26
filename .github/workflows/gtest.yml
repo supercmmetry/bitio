@@ -1,4 +1,4 @@
-name: Run GTest
+name: build
 on:
   push:
     branches:
