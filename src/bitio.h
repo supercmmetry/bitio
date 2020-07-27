@@ -45,21 +45,29 @@ namespace bitio {
         };
 
         FILE *file = nullptr;
-        uint8_t *buffer = nullptr;
-        uint64_t index = 0;
-        uint64_t size = 0;
-        uint64_t max_size = 0;
 
+        uint8_t *buffer = nullptr;
         uint8_t bit_set = 0;
         uint8_t bit_count = 0;
+
+        uint64_t index = 0;
+        uint64_t h_index = 0;
+        uint64_t size = 0;
+        uint64_t max_size = 0;
         uint64_t stream_size = 0;
+        uint64_t max_stream_size = 0;
+
         int64_t head = 0;
+
         bool is_writeable = false;
+        bool has_buffer_changed = false;
+        bool has_buffer_loaded = false;
+
         BITIO_CONTEXT ctx = EMPTY;
 
         void load_buffer();
 
-        void evaluate_stream_size();
+        uint64_t evaluate_stream_size();
 
         void forward_seek(uint8_t n);
 
@@ -75,6 +83,7 @@ namespace bitio {
 
         void try_read_init();
 
+        void update_h_index();
     public:
         stream(FILE *file, bool is_writeable = false, uint64_t buffer_size = BITIO_BUFFER_SIZE);
 
