@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 #include <bitio.h>
 
-class BitioTest : testing::Test {};
+class BitioTest : testing::Test {
+};
 
 TEST(BitioTest, read_test_1) {
     // Create sample file
@@ -275,7 +276,6 @@ TEST(BitioTest, seek_rw_test_2) {
 }
 
 TEST(BitioTest, seek_rw_test_3) {
-    remove("bitio_test.dat");
     FILE *file = fopen("bitio_test.dat", "w+");
     auto stream = new bitio::stream(file, true, 1);
 
@@ -283,6 +283,7 @@ TEST(BitioTest, seek_rw_test_3) {
     stream->seek(-1);
     stream->seek(-11);
     ASSERT_EQ(stream->read(12), 0xff);
+
 
     stream->write(0xff, 10);
     stream->seek(-10);
@@ -516,6 +517,41 @@ TEST(BitioTest, rw_test_5) {
     ASSERT_EQ(stream->read(25), 0xff33ff);
 
     ASSERT_EQ(stream->get_stream_size(), 7);
+}
+
+TEST(BitioTest, rw_test_6) {
+    remove("bitio_test.dat");
+
+    auto *tmp = fopen("bitio_test.dat", "a");
+    fclose(tmp);
+
+    FILE *file = fopen("bitio_test.dat", "rb+");
+    auto stream = new bitio::stream(file, true, 2);
+
+    stream->write(29, 5);
+    stream->seek(-1);
+    ASSERT_EQ(stream->read(1), 0x1);
+
+    stream->write(0x7fb, 11);
+    stream->write(0xff, 8);
+    stream->write(0xff33ff, 25);
+    stream->seek(-44);
+    stream->seek(19);
+
+    ASSERT_EQ(stream->read(25), 0xff33ff);
+
+    stream->flush();
+    stream->close();
+
+    file = fopen("bitio_test.dat", "rb+");
+    stream = new bitio::stream(file, true, 2);
+
+    ASSERT_EQ(stream->get_stream_size(), 7);
+
+    stream->write(29, 5);
+    ASSERT_EQ(stream->read(11), 0x7fb);
+    stream->write(0xfe, 0x8);
+    ASSERT_EQ(stream->read(25), 0xff33ff);
 }
 
 

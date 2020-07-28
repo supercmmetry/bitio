@@ -22,6 +22,7 @@ bitio::stream::stream(FILE *file, bool is_writeable, uint64_t buffer_size) {
     if (is_writeable) {
         max_stream_size = 0xffffffffffffffff;
         size = max_size;
+        pn_size = size;
         this->is_writeable = is_writeable;
     } else {
         max_stream_size = stream_size;
@@ -50,9 +51,13 @@ void bitio::stream::load_buffer() {
         size = fread(buffer, 1, max_size, file);
         has_buffer_loaded = true;
 
-        if (is_writeable) {
-            size = max_size;
+        if (size != 0) {
+            pn_size = size;
         }
+
+//        if (is_writeable) {
+//            size = max_size;
+//        }
     }
 }
 
@@ -69,6 +74,10 @@ uint64_t bitio::stream::read(uint8_t n) {
 
     // Transform from SW-Domain to R-Domain.
     if (ctx == SEEK || ctx == WRITE) {
+//        if (bit_count == 0 && !has_buffer_loaded && index == 0) {
+//            load_buffer();
+//        }
+
         bit_count = 8 - bit_count;
     }
 
@@ -201,7 +210,11 @@ void bitio::stream::write(uint64_t obj, uint8_t n) {
         bit_set += bit;
         bit_count++;
         bit_set <<= (8 - bit_count);
-        buffer[index] = bit_set;
+
+        uint8_t residue = (buffer[index] << bit_count);
+        residue >>= bit_count;
+
+        buffer[index] = bit_set + residue;
         has_buffer_changed = true;
 
         if (bit_count == 8) {
@@ -221,9 +234,8 @@ void bitio::stream::flush() {
     if (file != nullptr) {
         if (has_buffer_loaded) {
             fseek(file, -size, SEEK_CUR);
+            has_buffer_loaded = false;
         }
-
-        has_buffer_loaded = false;
 
         if (bit_count == 0) {
             fwrite(buffer, 1, h_index, file);
@@ -241,11 +253,6 @@ void bitio::stream::seek(int64_t n) {
     if (n == 0) {
         return;
     }
-
-    // Prevent data-loss while doing seek operations
-//    if (ctx == WRITE && index == 0) {
-//        flush();
-//    }
 
     // Transform from R-Domain to SW-Domain.
     if (ctx == READ) {
@@ -368,8 +375,6 @@ void bitio::stream::next(uint64_t nbytes) {
             // Prevent data-loss by flushing buffer
             if (has_buffer_changed) {
                 flush();
-                has_buffer_changed = false;
-                fseek(file, -(int64_t) (size + (bit_count != 0)), SEEK_CUR);
             }
 
             load_buffer();
@@ -392,7 +397,8 @@ void bitio::stream::back(uint64_t nbytes) {
 
     while (nbytes--) {
         if (index == 0) {
-            auto offset = head - (int64_t) size;
+            auto offset = head - (int64_t) pn_size;
+            auto index_offset = max_size - pn_size;
 
             // Flush buffer to prevent any data-loss.
             if (has_buffer_changed) {
@@ -406,8 +412,8 @@ void bitio::stream::back(uint64_t nbytes) {
             }
 
             load_buffer();
-            index = size - 1;
-            h_index = size - 1;
+            index = pn_size - index_offset - 1;
+            h_index = pn_size - index_offset - 1;
         } else {
             index--;
         }
@@ -420,8 +426,11 @@ void bitio::stream::set(uint8_t byte) {
     update_h_index();
     buffer[index] = byte;
 
-    if (index == size - 1) {
+    if (index == pn_size - 1) {
         flush();
+        load_buffer();
+        fseek(file, -(int64_t) size, SEEK_CUR);
+        has_buffer_loaded = false;
         index = 0;
         h_index = 0;
         bit_set = buffer[0];

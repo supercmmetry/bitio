@@ -53,6 +53,7 @@ namespace bitio {
         uint64_t index = 0;
         uint64_t h_index = 0;
         uint64_t size = 0;
+        uint64_t pn_size = 0;
         uint64_t max_size = 0;
         uint64_t stream_size = 0;
         uint64_t max_stream_size = 0;
