@@ -54,10 +54,6 @@ void bitio::stream::load_buffer() {
         if (size != 0) {
             pn_size = size;
         }
-
-//        if (is_writeable) {
-//            size = max_size;
-//        }
     }
 }
 
@@ -74,9 +70,9 @@ uint64_t bitio::stream::read(uint8_t n) {
 
     // Transform from SW-Domain to R-Domain.
     if (ctx == SEEK || ctx == WRITE) {
-//        if (bit_count == 0 && !has_buffer_loaded && index == 0) {
-//            load_buffer();
-//        }
+        if (!has_buffer_loaded) {
+            load_buffer();
+        }
 
         bit_count = 8 - bit_count;
     }
@@ -303,6 +299,10 @@ void bitio::stream::forward_seek(uint8_t n) {
 
     // Transform from SW-Domain to R-Domain.
     if (ctx == SEEK || ctx == WRITE) {
+        if (!has_buffer_loaded) {
+            load_buffer();
+        }
+
         bit_count = 8 - bit_count;
     }
 
@@ -398,7 +398,7 @@ void bitio::stream::back(uint64_t nbytes) {
     while (nbytes--) {
         if (index == 0) {
             auto offset = head - (int64_t) pn_size;
-            auto index_offset = max_size - pn_size;
+            offset -= offset % max_size;
 
             // Flush buffer to prevent any data-loss.
             if (has_buffer_changed) {
@@ -412,8 +412,8 @@ void bitio::stream::back(uint64_t nbytes) {
             }
 
             load_buffer();
-            index = pn_size - index_offset - 1;
-            h_index = pn_size - index_offset - 1;
+            index = pn_size - 1;
+            h_index = pn_size - 1;
         } else {
             index--;
         }

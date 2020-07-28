@@ -554,6 +554,123 @@ TEST(BitioTest, rw_test_6) {
     ASSERT_EQ(stream->read(25), 0xff33ff);
 }
 
+TEST(BitioTest, rw_test_7) {
+    remove("bitio_test.dat");
+
+    auto *tmp = fopen("bitio_test.dat", "a");
+    fclose(tmp);
+
+    FILE *file = fopen("bitio_test.dat", "rb+");
+    auto stream = new bitio::stream(file, true, 2);
+
+    stream->write(29, 5);
+    stream->seek(-1);
+    ASSERT_EQ(stream->read(1), 0x1);
+
+    stream->write(0x7fb, 11);
+    stream->write(0xff, 8);
+    stream->write(0xff33ff, 25);
+    stream->seek(-44);
+    stream->seek(19);
+
+    ASSERT_EQ(stream->read(25), 0xff33ff);
+
+    stream->flush();
+    stream->close();
+
+    file = fopen("bitio_test.dat", "rb+");
+    stream = new bitio::stream(file, true, 1);
+
+    ASSERT_EQ(stream->get_stream_size(), 7);
+
+    stream->write(29, 5);
+    ASSERT_EQ(stream->read(11), 0x7fb);
+    stream->write(0xfe, 0x8);
+    ASSERT_EQ(stream->read(25), 0xff33ff);
+}
+
+TEST(BitioTest, rw_test_8) {
+    remove("bitio_test.dat");
+
+    auto *tmp = fopen("bitio_test.dat", "a");
+    fclose(tmp);
+
+    FILE *file = fopen("bitio_test.dat", "rb+");
+    auto stream = new bitio::stream(file, true, 3);
+
+    stream->write(29, 5);
+    stream->seek(-1);
+    ASSERT_EQ(stream->read(1), 0x1);
+
+    stream->write(0x7fb, 11);
+    stream->write(0xff, 8);
+    stream->write(0xff33ff, 25);
+    stream->write(0x3434, 39);
+    stream->write(0x4343, 40);
+
+    stream->flush();
+    stream->close();
+
+    file = fopen("bitio_test.dat", "rb+");
+    stream = new bitio::stream(file, true, 2);
+
+    stream->write(29, 5);
+    ASSERT_EQ(stream->read(11), 0x7fb);
+    stream->write(0xfe, 0x8);
+    ASSERT_EQ(stream->read(25), 0xff33ff);
+    stream->write(0x4343, 39);
+    ASSERT_EQ(stream->read(40), 0x4343);
+    stream->seek(-40);
+    stream->write(0x3434, 40);
+    stream->seek(-40);
+    ASSERT_EQ(stream->read(40), 0x3434);
+}
+
+TEST(BitioTest, rw_test_9) {
+    remove("bitio_test.dat");
+
+    auto *tmp = fopen("bitio_test.dat", "a");
+    fclose(tmp);
+
+    FILE *file = fopen("bitio_test.dat", "rb+");
+    auto stream = new bitio::stream(file, true, 3);
+
+    stream->write(29, 8);
+    stream->seek(-1);
+    ASSERT_EQ(stream->read(1), 0x1);
+
+    stream->write(0x7f, 8);
+    stream->write(0xff, 8);
+    stream->write(0xff33ff, 24);
+    stream->write(0x3434, 16);
+    stream->write(0x4343, 16);
+
+    stream->flush();
+    stream->close();
+
+    file = fopen("bitio_test.dat", "rb+");
+    stream = new bitio::stream(file, true, 3);
+
+    stream->write(29, 8);
+    ASSERT_EQ(stream->read(8), 0x7f);
+    stream->write(0xfe, 0x8);
+    ASSERT_EQ(stream->read(24), 0xff33ff);
+    stream->write(0x5, 4);
+    stream->write(0x3, 4);
+    stream->write(0x43, 8);
+    stream->seek(-16);
+    ASSERT_EQ(stream->read(16), 0x5343);
+    ASSERT_EQ(stream->read(4), 0x4);
+    ASSERT_EQ(stream->read(12), 0x343);
+    stream->seek(-16);
+    stream->write(0x3434, 16);
+    stream->seek(-16);
+    ASSERT_EQ(stream->read(16), 0x3434);
+
+    stream->flush();
+    stream->close();
+}
+
 
 
 
