@@ -18,7 +18,6 @@ bitio::stream::stream(FILE *file, uint64_t buffer_size) {
     this->buffer = new uint8_t[buffer_size];
 
     stream_size = evaluate_stream_size();
-    max_stream_size = 0xffffffffffffffff;
     size = max_size;
     pn_size = size;
 
@@ -37,7 +36,6 @@ bitio::stream::stream(uint8_t *raw, uint64_t buffer_size) {
     this->buffer = raw;
     this->max_size = buffer_size;
     this->size = buffer_size;
-    this->max_stream_size = buffer_size;
     this->stream_size = buffer_size;
     this->has_buffer_loaded = true;
     this->pn_size = buffer_size;
