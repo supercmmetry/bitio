@@ -72,8 +72,6 @@ namespace bitio {
 
         void forward_seek(uint8_t n);
 
-        void check_eof(int64_t shift);
-
         void check_sof(int64_t shift);
 
         void next(uint64_t nbytes);
@@ -86,7 +84,7 @@ namespace bitio {
 
         void update_h_index();
     public:
-        stream(FILE *file, bool is_writeable = false, uint64_t buffer_size = BITIO_BUFFER_SIZE);
+        stream(FILE *file, uint64_t buffer_size = BITIO_BUFFER_SIZE);
 
         stream(uint8_t *raw, uint64_t buffer_size);
 

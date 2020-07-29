@@ -8,7 +8,7 @@ const char *bitio::bitio_exception::what() const noexcept {
     return msg.c_str();
 }
 
-bitio::stream::stream(FILE *file, bool is_writeable, uint64_t buffer_size) {
+bitio::stream::stream(FILE *file, uint64_t buffer_size) {
     if (buffer_size == 0) {
         throw bitio_exception("Buffer size must be greater than 0.");
     }
@@ -18,15 +18,9 @@ bitio::stream::stream(FILE *file, bool is_writeable, uint64_t buffer_size) {
     this->buffer = new uint8_t[buffer_size];
 
     stream_size = evaluate_stream_size();
-
-    if (is_writeable) {
-        max_stream_size = 0xffffffffffffffff;
-        size = max_size;
-        pn_size = size;
-        this->is_writeable = is_writeable;
-    } else {
-        max_stream_size = stream_size;
-    }
+    max_stream_size = 0xffffffffffffffff;
+    size = max_size;
+    pn_size = size;
 
     fread(buffer, 1, max_size, file);
     fseek(file, 0, SEEK_SET);
@@ -83,8 +77,6 @@ uint64_t bitio::stream::read(uint8_t n) {
     bit_set = buffer[index] << (8 - bit_count);
 
     ctx = READ;
-
-    check_eof(n);
 
     uint64_t value = 0;
     if (bit_count == 0) {
@@ -158,12 +150,6 @@ uint64_t bitio::stream::evaluate_stream_size() {
     return count;
 }
 
-void bitio::stream::check_eof(int64_t shift) {
-    if (((head << 3) + shift > (max_stream_size << 3))) {
-        throw bitio_exception("EOF encountered.");
-    }
-}
-
 void bitio::stream::close() {
     if (file != nullptr) {
         fclose(file);
@@ -191,8 +177,6 @@ void bitio::stream::write(uint64_t obj, uint8_t n) {
     }
 
     ctx = WRITE;
-
-    check_eof(n);
 
     obj <<= 0x40 - n;
 
@@ -261,8 +245,6 @@ void bitio::stream::seek(int64_t n) {
     ctx = SEEK;
 
     if (n > 0) {
-        check_eof(n);
-
         while (n >= 0x40) {
             forward_seek(0x40);
             n -= 0x40;
@@ -312,8 +294,6 @@ void bitio::stream::forward_seek(uint8_t n) {
     bit_set = buffer[index] << (8 - bit_count);
 
     ctx = READ;
-
-    check_eof(n);
 
     if (bit_count == 0) {
         bit_count = 8;
@@ -369,7 +349,6 @@ void bitio::stream::check_sof(int64_t shift) {
 }
 
 void bitio::stream::next(uint64_t nbytes) {
-    check_eof(nbytes << 3);
     update_h_index();
 
     while (nbytes--) {
@@ -444,7 +423,6 @@ void bitio::stream::set(uint8_t byte) {
     }
 
     head += 1;
-
 }
 
 void bitio::stream::try_read_init() {
