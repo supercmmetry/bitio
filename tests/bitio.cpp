@@ -655,7 +655,8 @@ TEST(BitioTest, rw_test_9) {
     ASSERT_EQ(stream->read(8), 0x7f);
     stream->write(0xfe, 0x8);
     ASSERT_EQ(stream->read(24), 0xff33ff);
-    stream->write(0x5, 4);
+    stream->write(0x0, 1);
+    stream->write(0x5, 3);
     stream->write(0x3, 4);
     stream->write(0x43, 8);
     stream->seek(-16);
