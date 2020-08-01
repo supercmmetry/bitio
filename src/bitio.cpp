@@ -437,6 +437,25 @@ void bitio::stream::update_h_index() {
     h_index = index > h_index ? index : h_index;
 }
 
+void bitio::stream::seek_to(uint64_t n) {
+    flush();
+
+    uint64_t nbytes = n >> 3;
+    uint8_t nbits = n & 0x7;
+
+    fseek(file, nbytes, SEEK_SET);
+
+    size = fread(buffer, 1, max_size, file);
+    fseek(file, - (int64_t) size, SEEK_CUR);
+
+    head = nbytes;
+    ctx = EMPTY;
+    size = max_size;
+    pn_size = size;
+
+    seek(nbits);
+}
+
 
 
 

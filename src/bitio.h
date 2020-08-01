@@ -92,6 +92,8 @@ namespace bitio {
 
         void seek(int64_t n);
 
+        void seek_to(uint64_t n);
+
         [[nodiscard]] uint64_t get_stream_size() const;
 
         void flush();
