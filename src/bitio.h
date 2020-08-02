@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <exception>
 #include <string>
+#include <semaphore.h>
 
 #define BITIO_BUFFER_SIZE 0x400
 
@@ -63,6 +64,8 @@ namespace bitio {
         bool has_buffer_loaded = false;
 
         BITIO_CONTEXT ctx = EMPTY;
+
+        sem_t mutex;
 
         void load_buffer();
 
