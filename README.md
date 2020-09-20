@@ -9,6 +9,7 @@ A simple and fast bitio library for C++
 - Support for in-memory buffers.
 - Support for read, write and seek in bit domain.
 - Added seek_to() for seeking at a specific bit from SOF.
+- Implemented thread-safety
 - Uses a temporary memory buffer to reduce file operations.
 
 ## Steps to use:
