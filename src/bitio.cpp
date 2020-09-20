@@ -527,21 +527,17 @@ void bitio::stream::seek_to(uint64_t n) {
 
     fseek(file, nbytes, SEEK_SET);
 
-    size = fread(buffer, 1, max_size, file);
-    fseek(file, -(int64_t) size, SEEK_CUR);
-
     head = nbytes;
     ctx = EMPTY;
     size = max_size;
     pn_size = size;
+    bit_count = 0;
+    bit_set = 0;
+    index = 0;
+    h_index = 0;
+    has_buffer_loaded = false;
 
     forward_seek(nbits);
 
     sem_post(&mutex);
 }
-
-
-
-
-
-
