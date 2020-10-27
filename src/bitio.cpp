@@ -150,7 +150,7 @@ uint64_t bitio::stream::evaluate_stream_size() {
     while (fread(tmp_ptr, 1, 1, file) != 0) {
         count++;
     }
-    free(tmp_ptr);
+    delete[] tmp_ptr;
     fseek(file, -count, SEEK_CUR);
 
     return count;
@@ -163,7 +163,7 @@ void bitio::stream::close() {
         fclose(file);
     }
 
-    free(buffer);
+    delete[] buffer;
     sem_post(&mutex);
 }
 
