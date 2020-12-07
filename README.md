@@ -6,6 +6,7 @@ A simple and fast bitio library for C++
 
 ## Features:
 
+- Very low memory overhead.
 - Support for in-memory buffers.
 - Support for read, write and seek in bit domain.
 - Added seek_to() for seeking at a specific bit from SOF.
