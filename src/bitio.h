@@ -84,6 +84,8 @@ namespace bitio {
         void try_read_init();
 
         void update_h_index();
+
+        void commit();
     public:
         stream(FILE *file, uint64_t buffer_size = BITIO_BUFFER_SIZE);
 

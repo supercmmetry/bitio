@@ -223,26 +223,8 @@ void bitio::stream::write(uint64_t obj, uint8_t n) {
 void bitio::stream::flush() {
     sem_wait(&mutex);
 
-    if (has_buffer_changed) {
-        has_buffer_changed = false;
-    } else {
-        sem_post(&mutex);
-        return;
-    }
-
-    if (file != nullptr) {
-        if (has_buffer_loaded) {
-            fseek(file, -size, SEEK_CUR);
-            has_buffer_loaded = false;
-        }
-
-        if (bit_count == 0) {
-            fwrite(buffer, 1, h_index, file);
-        } else {
-            fwrite(buffer, 1, h_index + 1, file);
-        }
-    }
-
+    // Commit changes if any.
+    commit();
     sem_post(&mutex);
 }
 
@@ -378,22 +360,8 @@ void bitio::stream::next(uint64_t nbytes) {
     while (nbytes--) {
         if (index == size - 1) {
 
-            // Prevent data-loss by flushing buffer
-            if (has_buffer_changed) {
-                has_buffer_changed = false;
-                if (file != nullptr) {
-                    if (has_buffer_loaded) {
-                        fseek(file, -size, SEEK_CUR);
-                        has_buffer_loaded = false;
-                    }
-
-                    if (bit_count == 0) {
-                        fwrite(buffer, 1, h_index, file);
-                    } else {
-                        fwrite(buffer, 1, h_index + 1, file);
-                    }
-                }
-            }
+            // Commit changes if any.
+            commit();
 
             load_buffer();
             index = 0;
@@ -418,22 +386,8 @@ void bitio::stream::back(uint64_t nbytes) {
             auto offset = head - (int64_t) pn_size;
             offset -= offset % max_size;
 
-            // Flush buffer to prevent any data-loss.
-            if (has_buffer_changed) {
-                has_buffer_changed = false;
-                if (file != nullptr) {
-                    if (has_buffer_loaded) {
-                        fseek(file, -size, SEEK_CUR);
-                        has_buffer_loaded = false;
-                    }
-
-                    if (bit_count == 0) {
-                        fwrite(buffer, 1, h_index, file);
-                    } else {
-                        fwrite(buffer, 1, h_index + 1, file);
-                    }
-                }
-            }
+            // Commit changes if any.
+            commit();
 
             if (offset < 0) {
                 fseek(file, 0, SEEK_SET);
@@ -457,23 +411,8 @@ void bitio::stream::set(uint8_t byte) {
     buffer[index] = byte;
 
     if (index == pn_size - 1) {
-        // flush data
-        if (has_buffer_changed) {
-            has_buffer_changed = false;
-            if (file != nullptr) {
-                if (has_buffer_loaded) {
-                    fseek(file, -size, SEEK_CUR);
-                    has_buffer_loaded = false;
-                }
-
-                if (bit_count == 0) {
-                    fwrite(buffer, 1, h_index, file);
-                } else {
-                    fwrite(buffer, 1, h_index + 1, file);
-                }
-            }
-        }
-
+        // commit changes if any.
+        commit();
         load_buffer();
         fseek(file, -(int64_t) size, SEEK_CUR);
         has_buffer_loaded = false;
@@ -506,21 +445,7 @@ void bitio::stream::update_h_index() {
 void bitio::stream::seek_to(uint64_t n) {
     sem_wait(&mutex);
 
-    if (has_buffer_changed) {
-        has_buffer_changed = false;
-        if (file != nullptr) {
-            if (has_buffer_loaded) {
-                fseek(file, -size, SEEK_CUR);
-                has_buffer_loaded = false;
-            }
-
-            if (bit_count == 0) {
-                fwrite(buffer, 1, h_index, file);
-            } else {
-                fwrite(buffer, 1, h_index + 1, file);
-            }
-        }
-    }
+    commit();
 
     uint64_t nbytes = n >> 3;
     uint8_t nbits = n & 0x7;
@@ -540,4 +465,22 @@ void bitio::stream::seek_to(uint64_t n) {
     forward_seek(nbits);
 
     sem_post(&mutex);
+}
+
+void bitio::stream::commit() {
+    if (has_buffer_changed) {
+        has_buffer_changed = false;
+        if (file != nullptr) {
+            if (has_buffer_loaded) {
+                fseek(file, -size, SEEK_CUR);
+                has_buffer_loaded = false;
+            }
+
+            if (bit_count == 0) {
+                fwrite(buffer, 1, h_index, file);
+            } else {
+                fwrite(buffer, 1, h_index + 1, file);
+            }
+        }
+    }
 }
