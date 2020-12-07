@@ -683,3 +683,66 @@ TEST(BitioTest, seek_to_2) {
     stream->flush();
     stream->close();
 }
+
+TEST(BitioTest, seek_to_write_read_1) {
+    remove("bitio_test.dat");
+
+    auto *tmp = fopen("bitio_test.dat", "a");
+    fclose(tmp);
+
+    FILE *file = fopen("bitio_test.dat", "rb+");
+    auto stream = new bitio::stream(file, 1024);
+
+    for (int i = 0; i < 1024; i++) {
+        stream->write(0xf0f1f2f3f4f5f6f7, 0x40);
+    }
+
+    stream->seek_to(0);
+    stream->write(0x13, 0x8);
+    stream->read(0x40);
+
+    stream->seek_to(0);
+    ASSERT_EQ(stream->read(0x8), 0x13);
+}
+
+TEST(BitioTest, seek_to_write_read_2) {
+    remove("bitio_test.dat");
+
+    auto *tmp = fopen("bitio_test.dat", "a");
+    fclose(tmp);
+
+    FILE *file = fopen("bitio_test.dat", "rb+");
+    auto stream = new bitio::stream(file, 1);
+
+    for (int i = 0; i < 1024; i++) {
+        stream->write(0xf0f1f2f3f4f5f6f7, 0x40);
+    }
+
+    stream->seek_to(0);
+    stream->write(0x13, 0x8);
+    stream->read(0x40);
+
+    stream->seek_to(0);
+    ASSERT_EQ(stream->read(0x8), 0x13);
+}
+
+TEST(BitioTest, seek_to_write_read_3) {
+    remove("bitio_test.dat");
+
+    auto *tmp = fopen("bitio_test.dat", "a");
+    fclose(tmp);
+
+    FILE *file = fopen("bitio_test.dat", "rb+");
+    auto stream = new bitio::stream(file, 0x40);
+
+    for (int i = 0; i < 1024; i++) {
+        stream->write(0xf0f1f2f3f4f5f6f7, 0x40);
+    }
+
+    stream->seek_to(0);
+    stream->write(0x13, 0x8);
+    stream->read(0x40);
+
+    stream->seek_to(0);
+    ASSERT_EQ(stream->read(0x8), 0x13);
+}

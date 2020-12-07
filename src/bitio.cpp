@@ -71,6 +71,10 @@ uint64_t bitio::stream::read(uint8_t n) {
     // Transform from SW-Domain to R-Domain.
     if (ctx == SEEK || ctx == WRITE) {
         if (!has_buffer_loaded) {
+            if (ctx == WRITE) {
+                merge();
+            }
+
             load_buffer();
         }
 
@@ -291,6 +295,9 @@ void bitio::stream::forward_seek(uint8_t n) {
     // Transform from SW-Domain to R-Domain.
     if (ctx == SEEK || ctx == WRITE) {
         if (!has_buffer_loaded) {
+            if (ctx == WRITE) {
+                merge();
+            }
             load_buffer();
         }
 
@@ -480,6 +487,25 @@ void bitio::stream::commit() {
                 fwrite(buffer, 1, h_index, file);
             } else {
                 fwrite(buffer, 1, h_index + 1, file);
+            }
+        }
+    }
+}
+
+void bitio::stream::merge() {
+    if (has_buffer_loaded) {
+        return;
+    }
+
+    if (has_buffer_changed) {
+        has_buffer_changed = false;
+        if (file != nullptr) {
+            if (bit_count == 0) {
+                fwrite(buffer, 1, h_index, file);
+                fseek(file, -(int64_t)h_index, SEEK_CUR);
+            } else {
+                fwrite(buffer, 1, h_index + 1, file);
+                fseek(file, -(int64_t)(h_index + 1), SEEK_CUR);
             }
         }
     }

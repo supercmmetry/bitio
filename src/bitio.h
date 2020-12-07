@@ -86,6 +86,8 @@ namespace bitio {
         void update_h_index();
 
         void commit();
+
+        void merge();
     public:
         stream(FILE *file, uint64_t buffer_size = BITIO_BUFFER_SIZE);
 
