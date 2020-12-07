@@ -10,4 +10,5 @@ add_library(bitio src/bitio.h src/bitio.cpp)
 
 enable_testing()
 add_subdirectory(tests)
+add_subdirectory(benchmarks)
 
