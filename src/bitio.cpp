@@ -74,7 +74,6 @@ uint64_t bitio::stream::read(uint8_t n) {
             if (ctx == WRITE) {
                 merge();
             }
-
             load_buffer();
         }
 
