@@ -395,7 +395,7 @@ TEST(BitioTest, rw_test_3) {
     ASSERT_EQ(stream->read(8), 0xff);
     ASSERT_EQ(stream->read(60), 0xff33ff);
 
-    ASSERT_EQ(stream->get_stream_size(), 11);
+    ASSERT_EQ(stream->size(), 11);
 }
 
 TEST(BitioTest, rw_test_4) {
@@ -426,7 +426,7 @@ TEST(BitioTest, rw_test_4) {
     ASSERT_EQ(stream->read(8), 0xff);
     ASSERT_EQ(stream->read(25), 0xff33ff);
 
-    ASSERT_EQ(stream->get_stream_size(), 7);
+    ASSERT_EQ(stream->size(), 7);
 }
 
 TEST(BitioTest, rw_test_5) {
@@ -461,7 +461,7 @@ TEST(BitioTest, rw_test_5) {
     ASSERT_EQ(stream->read(8), 0xff);
     ASSERT_EQ(stream->read(25), 0xff33ff);
 
-    ASSERT_EQ(stream->get_stream_size(), 7);
+    ASSERT_EQ(stream->size(), 7);
 }
 
 TEST(BitioTest, rw_test_6) {
@@ -491,7 +491,7 @@ TEST(BitioTest, rw_test_6) {
     file = fopen("bitio_test.dat", "rb+");
     stream = new bitio::stream(file, 2);
 
-    ASSERT_EQ(stream->get_stream_size(), 7);
+    ASSERT_EQ(stream->size(), 7);
 
     stream->write(29, 5);
     ASSERT_EQ(stream->read(11), 0x7fb);
@@ -526,7 +526,7 @@ TEST(BitioTest, rw_test_7) {
     file = fopen("bitio_test.dat", "rb+");
     stream = new bitio::stream(file, 1);
 
-    ASSERT_EQ(stream->get_stream_size(), 7);
+    ASSERT_EQ(stream->size(), 7);
 
     stream->write(29, 5);
     ASSERT_EQ(stream->read(11), 0x7fb);
