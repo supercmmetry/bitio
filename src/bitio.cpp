@@ -211,4 +211,45 @@ void bitio::stream::seek_to(uint64_t n) {
     mutex.unlock();
 }
 
+void bitio::stream::seek(int64_t n) {
+    if (n == 0) {
+        return;
+    }
+
+    mutex.lock();
+
+    if (n > 0) {
+        uint64_t nbytes = n >> 3;
+        uint64_t nbits = n & 0x7;
+
+        byte_head += nbytes;
+        bit_head += nbits;
+
+        byte_head += (bit_head >> 3);
+        bit_head = bit_head & 0x7;
+    } else {
+        n = -n;
+        uint64_t nbytes = n >> 3;
+        uint64_t nbits = n & 0x7;
+
+        if (byte_head < nbytes) {
+            throw bitio_exception("SOF reached");
+        }
+
+        byte_head -= nbytes;
+        if (bit_head >= nbits) {
+            bit_head -= nbits;
+        } else {
+            if (byte_head == 0) {
+                throw bitio_exception("SOF reached");
+            }
+
+            byte_head--;
+            bit_head = 8 - nbits + bit_head;
+        }
+    }
+
+    mutex.unlock();
+}
+
 
