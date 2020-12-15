@@ -125,8 +125,8 @@ uint64_t bitio::stream::size() {
     }
 
     mutex.lock();
-    fseek(file, 0, SEEK_END);
-    uint64_t fsize = ftell(file);
+    std::fseek(file, 0, SEEK_END);
+    uint64_t fsize = std::ftell(file);
     mutex.unlock();
 
     return fsize;
@@ -198,6 +198,17 @@ uint8_t bitio::stream::next_byte() {
     } else {
         return read_byte(byte_head);
     }
+}
+
+void bitio::stream::seek_to(uint64_t n) {
+    mutex.lock();
+
+    uint64_t nbytes = n >> 3;
+    uint64_t nbits = n & 0x7;
+    seek_byte(nbytes);
+    bit_head = nbits;
+
+    mutex.unlock();
 }
 
 
