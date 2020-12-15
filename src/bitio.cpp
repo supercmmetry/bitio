@@ -74,30 +74,6 @@ bitio::stream::stream(FILE *file, uint64_t buffer_size) {
     this->buffer = new uint8_t [buffer_size];
 }
 
-void bitio::stream::seek_byte(uint64_t global_offset) {
-    uint64_t offset = global_offset / buffer_size;
-    uint64_t index = global_offset % buffer_size;
-
-    if (offset != buffer_offset) {
-        if (file) {
-            // Commit changes to disk if necessary.
-            commit();
-
-            // Read from disk.
-            std::fseek(file, global_offset - index, SEEK_SET);
-            current_buffer_size = std::fread(buffer, 1, buffer_size, file);
-            buffer_offset = offset;
-        } else {
-            throw bitio_exception("EOF encountered");
-        }
-    }
-
-    if (index >= current_buffer_size) {
-        throw bitio_exception("EOF encountered");
-    }
-    byte_head = global_offset;
-}
-
 bitio::stream::stream(uint8_t *raw, uint64_t buffer_size) {
     this->buffer_size = buffer_size;
     this->buffer = raw;
@@ -205,7 +181,7 @@ void bitio::stream::seek_to(uint64_t n) {
 
     uint64_t nbytes = n >> 3;
     uint64_t nbits = n & 0x7;
-    seek_byte(nbytes);
+    byte_head = nbytes;
     bit_head = nbits;
 
     mutex.unlock();
@@ -250,6 +226,10 @@ void bitio::stream::seek(int64_t n) {
     }
 
     mutex.unlock();
+}
+
+void bitio::stream::write(uint64_t obj, uint8_t n) {
+
 }
 
 

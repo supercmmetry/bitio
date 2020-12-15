@@ -58,8 +58,6 @@ namespace bitio {
 
         inline void write_byte(uint64_t global_offset, uint8_t byte);
 
-        inline void seek_byte(uint64_t global_offset);
-
         inline uint8_t next_byte();
 
     public:
