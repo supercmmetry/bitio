@@ -5,12 +5,12 @@
 #include <cstdint>
 #include <exception>
 #include <string>
-#include <semaphore.h>
+#include <mutex>
 
 #define BITIO_BUFFER_SIZE 0x400
 
 namespace bitio {
-    const uint64_t ui64_single_bit_masks[] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800,
+    const uint64_t u64_sblmasks[] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800,
                                             0x1000,
                                             0x2000, 0x4000, 0x8000, 0x10000, 0x20000, 0x40000, 0x80000, 0x100000,
                                             0x200000,
@@ -25,6 +25,10 @@ namespace bitio {
                                             0x2000000000000000, 0x4000000000000000, 0x8000000000000000};
 
 
+    const uint8_t u8_rmasks[] = {0x0, 0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff};
+    const uint8_t u8_lmasks[] = {0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
+    const uint8_t u8_mmasks[] = {0x7f, 0xbf, 0xdf, 0xef, 0xf7, 0xfb, 0xfd, 0xfe, 0xff};
+
     class bitio_exception : public std::exception {
     private:
         std::string msg;
@@ -37,57 +41,28 @@ namespace bitio {
 
     class stream {
     private:
-        enum BITIO_CONTEXT {
-            EMPTY = 0,
-            READ = 1,
-            WRITE = 2,
-            SEEK = 3,
-            INVALID = 255
-        };
+        uint8_t *buffer{};
+        uint64_t buffer_offset{};
+        uint64_t buffer_size{};
+        uint64_t current_buffer_size{};
+        std::mutex mutex;
 
-        FILE *file = nullptr;
+        uint64_t byte_head{};
+        uint8_t bit_head{};
 
-        uint8_t *buffer = nullptr;
-        uint8_t bit_set = 0;
-        uint8_t bit_count = 0;
+        FILE *file;
 
-        uint64_t index = 0;
-        uint64_t h_index = 0;
-        uint64_t size = 0;
-        uint64_t pn_size = 0;
-        uint64_t max_size = 0;
-        uint64_t stream_size = 0;
+        bool requires_commit{};
 
-        int64_t head = 0;
+        inline void commit();
 
-        bool has_buffer_changed = false;
-        bool has_buffer_loaded = false;
+        inline uint8_t read_byte(uint64_t global_offset, bool capture_eof = true);
 
-        BITIO_CONTEXT ctx = EMPTY;
+        inline void write_byte(uint64_t global_offset, uint8_t byte);
 
-        sem_t mutex;
+        inline uint8_t read_next_byte();
 
-        void load_buffer();
-
-        uint64_t evaluate_stream_size();
-
-        void forward_seek(uint8_t n);
-
-        void check_sof(int64_t shift);
-
-        void next(uint64_t nbytes);
-
-        void back(uint64_t nbytes);
-
-        void set(uint8_t byte);
-
-        void try_read_init();
-
-        void update_h_index();
-
-        void commit();
-
-        void merge();
+        inline uint8_t fetch_next_byte();
     public:
         stream(FILE *file, uint64_t buffer_size = BITIO_BUFFER_SIZE);
 
@@ -101,7 +76,7 @@ namespace bitio {
 
         void seek_to(uint64_t n);
 
-        [[nodiscard]] uint64_t get_stream_size() const;
+        [[nodiscard]] uint64_t size();
 
         void flush();
 
