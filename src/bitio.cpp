@@ -8,7 +8,7 @@ const char *bitio::bitio_exception::what() const noexcept {
     return msg.c_str();
 }
 
-uint8_t bitio::stream::read_byte(uint64_t global_offset) {
+uint8_t bitio::stream::read_byte(uint64_t global_offset, bool capture_eof) {
     uint64_t offset = global_offset / buffer_size;
     uint64_t index = global_offset % buffer_size;
 
@@ -27,7 +27,12 @@ uint8_t bitio::stream::read_byte(uint64_t global_offset) {
     }
 
     if (index >= current_buffer_size) {
-        throw bitio_exception("EOF encountered");
+        if (capture_eof) {
+            throw bitio_exception("EOF encountered");
+        } else {
+            byte_head = global_offset;
+            return 0;
+        }
     }
 
     byte_head = global_offset;
@@ -72,10 +77,13 @@ bitio::stream::stream(FILE *file, uint64_t buffer_size) {
     this->file = file;
     this->buffer_size = buffer_size;
     this->buffer = new uint8_t [buffer_size];
+
+    current_buffer_size = std::fread(buffer, 1, buffer_size, file);
 }
 
 bitio::stream::stream(uint8_t *raw, uint64_t buffer_size) {
     this->buffer_size = buffer_size;
+    this->current_buffer_size = buffer_size;
     this->buffer = raw;
 }
 
@@ -120,7 +128,7 @@ uint64_t bitio::stream::read(uint8_t n) {
     uint8_t nbits = n & 0x7;
 
     // First, read the leftover bits.
-    uint8_t curr_byte = next_byte();
+    uint8_t curr_byte = read_next_byte();
 
     uint8_t rbits = 8 - bit_head;
 
@@ -152,12 +160,13 @@ uint64_t bitio::stream::read(uint8_t n) {
     // Now, read the nbytes.
     while (nbytes--) {
         value <<= 0x8;
-        value += next_byte();
+        value += read_next_byte();
+        bit_head = 8;
     }
 
     // Read the remaining nbits. We don't need masks here because, bit_head is always 8 if nbits != 0
     if (nbits != 0) {
-        curr_byte = next_byte();
+        curr_byte = read_next_byte();
         value <<= nbits;
         value += (curr_byte >> (8 - nbits));
         bit_head += nbits;
@@ -167,7 +176,7 @@ uint64_t bitio::stream::read(uint8_t n) {
     return value;
 }
 
-uint8_t bitio::stream::next_byte() {
+uint8_t bitio::stream::read_next_byte() {
     if (bit_head == 8) {
         bit_head = 0;
         return read_byte(byte_head + 1);
@@ -193,6 +202,11 @@ void bitio::stream::seek(int64_t n) {
     }
 
     mutex.lock();
+
+    if (bit_head == 8) {
+        byte_head++;
+        bit_head = 0;
+    }
 
     if (n > 0) {
         uint64_t nbytes = n >> 3;
@@ -229,7 +243,48 @@ void bitio::stream::seek(int64_t n) {
 }
 
 void bitio::stream::write(uint64_t obj, uint8_t n) {
+    if (n == 0) {
+        return;
+    }
+    if (n > 0x40) {
+        throw bitio_exception("write() supports upto 64-bits only");
+    }
 
+    obj <<= (0x40 - n);
+    mutex.lock();
+    uint8_t patch_byte = fetch_next_byte();
+    bool residual = false;
+
+    for (uint8_t i = 0; i < n; i++) {
+        uint8_t mask_index = 0x3f - i;
+        uint8_t rbits = 8 - bit_head;
+        uint8_t wbit = (obj & u64_sblmasks[mask_index]) >> mask_index;
+        patch_byte = (patch_byte & u8_mmasks[bit_head]) + (wbit << (rbits - 1));
+        bit_head++;
+        residual = true;
+
+        if (bit_head == 8) {
+            write_byte(byte_head, patch_byte);
+            patch_byte = fetch_next_byte();
+            residual = false;
+        }
+    }
+
+    if (residual) {
+        write_byte(byte_head, patch_byte);
+    }
+
+
+    mutex.unlock();
+}
+
+uint8_t bitio::stream::fetch_next_byte() {
+    if (bit_head == 8) {
+        bit_head = 0;
+        return read_byte(byte_head + 1, false);
+    } else {
+        return read_byte(byte_head, false);
+    }
 }
 
 

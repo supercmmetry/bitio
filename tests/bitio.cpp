@@ -7,7 +7,12 @@ class BitioTest : testing::Test {
 
 TEST(BitioTest, read_test_1) {
     // Create sample file
-    FILE *file = fopen("bitio_test.dat", "wb");
+    remove("bitio_test.dat");
+
+    auto *tmp = fopen("bitio_test.dat", "a");
+    fclose(tmp);
+
+    FILE *file = fopen("bitio_test.dat", "rb+");
     uint8_t *raw = new uint8_t[1048576];
 
     for (int i = 0; i < 1048576; i++) {
@@ -34,7 +39,12 @@ TEST(BitioTest, read_test_1) {
 
 TEST(BitioTest, read_test_2) {
     // Create sample file
-    FILE *file = fopen("bitio_test.dat", "wb");
+    remove("bitio_test.dat");
+
+    auto *tmp = fopen("bitio_test.dat", "a");
+    fclose(tmp);
+
+    FILE *file = fopen("bitio_test.dat", "rb+");
     uint8_t *raw = new uint8_t[100];
 
     for (int i = 0; i < 100; i++) {
@@ -62,7 +72,12 @@ TEST(BitioTest, read_test_2) {
 
 TEST(BitioTest, read_test_3) {
     // Create sample file
-    FILE *file = fopen("bitio_test.dat", "wb");
+    remove("bitio_test.dat");
+
+    auto *tmp = fopen("bitio_test.dat", "a");
+    fclose(tmp);
+
+    FILE *file = fopen("bitio_test.dat", "rb+");
     uint8_t *raw = new uint8_t[5];
 
     for (int i = 0; i < 5; i++) {
@@ -87,7 +102,12 @@ TEST(BitioTest, read_test_3) {
 
 TEST(BitioTest, read_test_4) {
     // Create sample file
-    FILE *file = fopen("bitio_test.dat", "wb");
+    remove("bitio_test.dat");
+
+    auto *tmp = fopen("bitio_test.dat", "a");
+    fclose(tmp);
+
+    FILE *file = fopen("bitio_test.dat", "rb+");
     uint8_t *raw = new uint8_t[1024];
 
     for (int i = 0; i < 1024; i++) {
@@ -110,7 +130,12 @@ TEST(BitioTest, read_test_4) {
 }
 
 TEST(BitioTest, write_test_1) {
-    FILE *file = fopen("bitio_test.dat", "wb");
+    remove("bitio_test.dat");
+
+    auto *tmp = fopen("bitio_test.dat", "a");
+    fclose(tmp);
+
+    FILE *file = fopen("bitio_test.dat", "rb+");
 
     auto stream = new bitio::stream(file, 1024);
     stream->write(4, 8);

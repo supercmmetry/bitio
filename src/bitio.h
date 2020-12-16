@@ -10,7 +10,7 @@
 #define BITIO_BUFFER_SIZE 0x400
 
 namespace bitio {
-    const uint64_t ui64_single_bit_masks[] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800,
+    const uint64_t u64_sblmasks[] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800,
                                             0x1000,
                                             0x2000, 0x4000, 0x8000, 0x10000, 0x20000, 0x40000, 0x80000, 0x100000,
                                             0x200000,
@@ -26,6 +26,8 @@ namespace bitio {
 
 
     const uint8_t u8_rmasks[] = {0x0, 0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff};
+    const uint8_t u8_lmasks[] = {0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
+    const uint8_t u8_mmasks[] = {0x7f, 0xbf, 0xdf, 0xef, 0xf7, 0xfb, 0xfd, 0xfe, 0xff};
 
     class bitio_exception : public std::exception {
     private:
@@ -54,12 +56,13 @@ namespace bitio {
 
         inline void commit();
 
-        inline uint8_t read_byte(uint64_t global_offset);
+        inline uint8_t read_byte(uint64_t global_offset, bool capture_eof = true);
 
         inline void write_byte(uint64_t global_offset, uint8_t byte);
 
-        inline uint8_t next_byte();
+        inline uint8_t read_next_byte();
 
+        inline uint8_t fetch_next_byte();
     public:
         stream(FILE *file, uint64_t buffer_size = BITIO_BUFFER_SIZE);
 
