@@ -52,7 +52,7 @@ void benchmark(bitio::stream *stream) {
 
     // Seek_to operations
     start = clock.now();
-    for (int i = 0; i < 1024; i++) {
+    for (int i = 0; i < 1048576; i++) {
         stream->seek_to(i);
     }
     auto seek_to_pass_1 = clock.now() - start;
