@@ -286,5 +286,3 @@ uint8_t bitio::stream::fetch_next_byte() {
         return read_byte(byte_head, false);
     }
 }
-
-
