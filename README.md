@@ -15,7 +15,7 @@ A simple and fast bitio library for C++
 
 ## Steps to use:
 
-- Include `src/bitio.h` and `src/bitio.cpp` in your project and you are good to go!
+- Add this project as a submodule using `git submodule add git@github.com:supercmmetry/bitio`
 
 ## Benchmarks:
 
