@@ -1,6 +1,6 @@
 #include <iostream>
 #include <chrono>
-#include <bitio.h>
+#include <bitio/bitio.h>
 
 void benchmark(bitio::stream *stream) {
     auto clock = std::chrono::high_resolution_clock();

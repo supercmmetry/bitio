@@ -13,7 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout-repo
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
+        with:
+          submodules: true
 
       - name: Install clang
         run: sudo apt-get update && sudo apt-get install clang-10
@@ -21,7 +23,7 @@ jobs:
       - name: Compile tests
         run: |
           cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang .
-          make gtest_run
+          make bitio_test
 
       - name: Run tests
-        run: bin/gtest_run
+        run: bin/bitio_test

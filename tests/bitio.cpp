@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <bitio.h>
+#include <bitio/bitio.h>
 #include <chrono>
 
 class BitioTest : testing::Test {
@@ -35,6 +35,9 @@ TEST(BitioTest, read_test_1) {
     }
 
     ASSERT_EQ(stream->read(0x8), 20);
+    stream->close();
+
+    delete stream;
 }
 
 TEST(BitioTest, read_test_2) {
@@ -68,6 +71,10 @@ TEST(BitioTest, read_test_2) {
     ASSERT_EQ(stream->read(0x7), 127);
     ASSERT_EQ(stream->read(10), 1023);
     ASSERT_EQ(stream->read(20), 1048575);
+
+    stream->close();
+
+    delete stream;
 }
 
 TEST(BitioTest, read_test_3) {
@@ -98,6 +105,10 @@ TEST(BitioTest, read_test_3) {
     }
 
     ASSERT_EQ(stream->read(0x8), (count << 1) % 256);
+
+    stream->close();
+
+    delete stream;
 }
 
 TEST(BitioTest, read_test_4) {

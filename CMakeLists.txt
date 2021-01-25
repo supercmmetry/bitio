@@ -1,12 +1,17 @@
 cmake_minimum_required(VERSION 3.16)
-project(bitio)
+project(bitio LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-include_directories("src")
+add_library(bitio SHARED src/bitio.cpp)
 
-add_library(bitio src/bitio.h src/bitio.cpp)
+target_include_directories(bitio
+        PUBLIC
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 enable_testing()
 add_subdirectory(tests)

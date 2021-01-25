@@ -1,4 +1,4 @@
-#include "bitio.h"
+#include "../include/bitio/bitio.h"
 
 bitio::bitio_exception::bitio_exception(std::string msg) {
     this->msg = "bitio: " + std::move(msg);
@@ -9,109 +9,108 @@ const char *bitio::bitio_exception::what() const noexcept {
 }
 
 uint8_t bitio::stream::read_byte(uint64_t global_offset, bool capture_eof) {
-    uint64_t offset = global_offset / buffer_size;
-    uint64_t index = global_offset % buffer_size;
+    uint64_t offset = global_offset / _buffer_size;
+    uint64_t index = global_offset % _buffer_size;
 
-    if (offset != buffer_offset) {
-        if (file) {
+    if (offset != _buffer_offset) {
+        if (_file) {
             // Commit changes to disk if necessary.
             commit();
 
             // Read from disk.
-            std::fseek(file, global_offset - index, SEEK_SET);
-            current_buffer_size = std::fread(buffer, 1, buffer_size, file);
-            buffer_offset = offset;
+            std::fseek(_file, global_offset - index, SEEK_SET);
+            _current_buffer_size = std::fread(_buffer, 1, _buffer_size, _file);
+            _buffer_offset = offset;
         } else {
             throw bitio_exception("EOF encountered");
         }
     }
 
-    if (index >= current_buffer_size) {
+    if (index >= _current_buffer_size) {
         if (capture_eof) {
             throw bitio_exception("EOF encountered");
         } else {
-            byte_head = global_offset;
+            _byte_head = global_offset;
             return 0;
         }
     }
 
-    byte_head = global_offset;
-    return buffer[index];
+    _byte_head = global_offset;
+    return _buffer[index];
 }
 
 void bitio::stream::commit() {
-    if (requires_commit && file) {
-        std::fseek(file, buffer_offset * buffer_size, SEEK_SET);
-        std::fwrite(buffer, 1, current_buffer_size, file);
-        requires_commit = false;
+    if (_requires_commit && _file) {
+        std::fseek(_file, _buffer_offset * _buffer_size, SEEK_SET);
+        std::fwrite(_buffer, 1, _current_buffer_size, _file);
+        _requires_commit = false;
     }
 }
 
 void bitio::stream::write_byte(uint64_t global_offset, uint8_t byte) {
-    uint64_t offset = global_offset / buffer_size;
-    uint64_t index = global_offset % buffer_size;
+    uint64_t offset = global_offset / _buffer_size;
+    uint64_t index = global_offset % _buffer_size;
 
-    if (offset != buffer_offset) {
-        if (file) {
+    if (offset != _buffer_offset) {
+        if (_file) {
             // Commit changes to disk if necessary.
             commit();
 
             // Read from disk.
-            std::fseek(file, global_offset - index, SEEK_SET);
-            current_buffer_size = std::fread(buffer, 1, buffer_size, file);
-            buffer_offset = offset;
+            std::fseek(_file, global_offset - index, SEEK_SET);
+            _current_buffer_size = std::fread(_buffer, 1, _buffer_size, _file);
+            _buffer_offset = offset;
         } else {
             throw bitio_exception("EOF encountered");
         }
     }
 
-    if (index >= current_buffer_size) {
-        current_buffer_size = index + 1;
+    if (index >= _current_buffer_size) {
+        _current_buffer_size = index + 1;
     }
-    byte_head = global_offset;
-    buffer[index] = byte;
-    requires_commit = true;
+    _byte_head = global_offset;
+    _buffer[index] = byte;
+    _requires_commit = true;
 }
 
 bitio::stream::stream(FILE *file, uint64_t buffer_size) {
-    this->file = file;
-    this->buffer_size = buffer_size;
-    this->buffer = new uint8_t [buffer_size];
+    this->_file = file;
+    this->_buffer_size = buffer_size;
+    this->_buffer = new uint8_t [buffer_size];
 
-    current_buffer_size = std::fread(buffer, 1, buffer_size, file);
+    _current_buffer_size = std::fread(_buffer, 1, buffer_size, file);
 }
 
 bitio::stream::stream(uint8_t *raw, uint64_t buffer_size) {
-    this->buffer_size = buffer_size;
-    this->current_buffer_size = buffer_size;
-    this->buffer = raw;
+    this->_buffer_size = buffer_size;
+    this->_current_buffer_size = buffer_size;
+    this->_buffer = raw;
 }
 
 void bitio::stream::flush() {
-    mutex.lock();
+    _mutex.lock();
     commit();
-    mutex.unlock();
+    _mutex.unlock();
 }
 
 void bitio::stream::close() {
-    mutex.lock();
+    _mutex.lock();
     commit();
-    if (file) {
-        std::fclose(file);
-        delete[] buffer;
+    if (_file) {
+        std::fclose(_file);
     }
-    mutex.unlock();
+    _mutex.unlock();
 }
 
 uint64_t bitio::stream::size() {
-    if (!file) {
-        return buffer_size;
+    if (!_file) {
+        return _buffer_size;
     }
 
-    mutex.lock();
-    std::fseek(file, 0, SEEK_END);
-    uint64_t fsize = std::ftell(file);
-    mutex.unlock();
+    _mutex.lock();
+    std::fseek(_file, 0, SEEK_END);
+    uint64_t fsize = std::ftell(_file);
+    _mutex.unlock();
 
     return fsize;
 }
@@ -121,7 +120,7 @@ uint64_t bitio::stream::read(uint8_t n) {
         return 0;
     }
 
-    mutex.lock();
+    _mutex.lock();
 
     uint64_t value = 0;
     uint8_t nbytes = n >> 3;
@@ -130,18 +129,18 @@ uint64_t bitio::stream::read(uint8_t n) {
     // First, read the leftover bits.
     uint8_t curr_byte = read_next_byte();
 
-    uint8_t rbits = 8 - bit_head;
+    uint8_t rbits = 8 - _bit_head;
 
     if (nbits <= rbits) {
         value = (curr_byte & u8_rmasks[rbits]) >> (rbits - nbits);
-        bit_head += nbits;
+        _bit_head += nbits;
         rbits -= nbits;
         nbits = 0;
     } else {
         value = curr_byte & u8_rmasks[rbits];
         nbits -= rbits;
         rbits = 0;
-        bit_head = 8;
+        _bit_head = 8;
     }
 
     // Now, if we need to read some nbytes and we have leftover rbits, we borrow a byte from the stream and
@@ -153,7 +152,7 @@ uint64_t bitio::stream::read(uint8_t n) {
             nbits = 8 - rbits;
             value <<= rbits;
             value += curr_byte & u8_rmasks[rbits];
-            bit_head = 8;
+            _bit_head = 8;
         }
     }
 
@@ -161,7 +160,7 @@ uint64_t bitio::stream::read(uint8_t n) {
     while (nbytes--) {
         value <<= 0x8;
         value += read_next_byte();
-        bit_head = 8;
+        _bit_head = 8;
     }
 
     // Read the remaining nbits. We don't need masks here because, bit_head is always 8 if nbits != 0
@@ -169,31 +168,31 @@ uint64_t bitio::stream::read(uint8_t n) {
         curr_byte = read_next_byte();
         value <<= nbits;
         value += (curr_byte >> (8 - nbits));
-        bit_head += nbits;
+        _bit_head += nbits;
     }
 
-    mutex.unlock();
+    _mutex.unlock();
     return value;
 }
 
 uint8_t bitio::stream::read_next_byte() {
-    if (bit_head == 8) {
-        bit_head = 0;
-        return read_byte(byte_head + 1);
+    if (_bit_head == 8) {
+        _bit_head = 0;
+        return read_byte(_byte_head + 1);
     } else {
-        return read_byte(byte_head);
+        return read_byte(_byte_head);
     }
 }
 
 void bitio::stream::seek_to(uint64_t n) {
-    mutex.lock();
+    _mutex.lock();
 
     uint64_t nbytes = n >> 3;
     uint64_t nbits = n & 0x7;
-    byte_head = nbytes;
-    bit_head = nbits;
+    _byte_head = nbytes;
+    _bit_head = nbits;
 
-    mutex.unlock();
+    _mutex.unlock();
 }
 
 void bitio::stream::seek(int64_t n) {
@@ -201,45 +200,45 @@ void bitio::stream::seek(int64_t n) {
         return;
     }
 
-    mutex.lock();
+    _mutex.lock();
 
-    if (bit_head == 8) {
-        byte_head++;
-        bit_head = 0;
+    if (_bit_head == 8) {
+        _byte_head++;
+        _bit_head = 0;
     }
 
     if (n > 0) {
         uint64_t nbytes = n >> 3;
         uint64_t nbits = n & 0x7;
 
-        byte_head += nbytes;
-        bit_head += nbits;
+        _byte_head += nbytes;
+        _bit_head += nbits;
 
-        byte_head += (bit_head >> 3);
-        bit_head = bit_head & 0x7;
+        _byte_head += (_bit_head >> 3);
+        _bit_head = _bit_head & 0x7;
     } else {
         n = -n;
         uint64_t nbytes = n >> 3;
         uint64_t nbits = n & 0x7;
 
-        if (byte_head < nbytes) {
+        if (_byte_head < nbytes) {
             throw bitio_exception("SOF reached");
         }
 
-        byte_head -= nbytes;
-        if (bit_head >= nbits) {
-            bit_head -= nbits;
+        _byte_head -= nbytes;
+        if (_bit_head >= nbits) {
+            _bit_head -= nbits;
         } else {
-            if (byte_head == 0) {
+            if (_byte_head == 0) {
                 throw bitio_exception("SOF reached");
             }
 
-            byte_head--;
-            bit_head = 8 - nbits + bit_head;
+            _byte_head--;
+            _bit_head = 8 - nbits + _bit_head;
         }
     }
 
-    mutex.unlock();
+    _mutex.unlock();
 }
 
 void bitio::stream::write(uint64_t obj, uint8_t n) {
@@ -251,38 +250,44 @@ void bitio::stream::write(uint64_t obj, uint8_t n) {
     }
 
     obj <<= (0x40 - n);
-    mutex.lock();
+    _mutex.lock();
     uint8_t patch_byte = fetch_next_byte();
     bool residual = false;
 
     for (uint8_t i = 0; i < n; i++) {
         uint8_t mask_index = 0x3f - i;
-        uint8_t rbits = 8 - bit_head;
+        uint8_t rbits = 8 - _bit_head;
         uint8_t wbit = (obj & u64_sblmasks[mask_index]) >> mask_index;
-        patch_byte = (patch_byte & u8_mmasks[bit_head]) + (wbit << (rbits - 1));
-        bit_head++;
+        patch_byte = (patch_byte & u8_mmasks[_bit_head]) + (wbit << (rbits - 1));
+        _bit_head++;
         residual = true;
 
-        if (bit_head == 8) {
-            write_byte(byte_head, patch_byte);
+        if (_bit_head == 8) {
+            write_byte(_byte_head, patch_byte);
             patch_byte = fetch_next_byte();
             residual = false;
         }
     }
 
     if (residual) {
-        write_byte(byte_head, patch_byte);
+        write_byte(_byte_head, patch_byte);
     }
 
 
-    mutex.unlock();
+    _mutex.unlock();
 }
 
 uint8_t bitio::stream::fetch_next_byte() {
-    if (bit_head == 8) {
-        bit_head = 0;
-        return read_byte(byte_head + 1, false);
+    if (_bit_head == 8) {
+        _bit_head = 0;
+        return read_byte(_byte_head + 1, false);
     } else {
-        return read_byte(byte_head, false);
+        return read_byte(_byte_head, false);
+    }
+}
+
+bitio::stream::~stream() {
+    if (_file) {
+        delete[] _buffer;
     }
 }
