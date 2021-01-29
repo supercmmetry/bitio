@@ -1,4 +1,5 @@
-#include "../include/bitio/bitio.h"
+#include <bitio/bitio.h>
+#include <filesystem>
 
 bitio::bitio_exception::bitio_exception(std::string msg) {
     this->msg = "bitio: " + std::move(msg);
@@ -90,15 +91,6 @@ bitio::stream::stream(uint8_t *raw, uint64_t buffer_size) {
 void bitio::stream::flush() {
     _mutex.lock();
     commit();
-    _mutex.unlock();
-}
-
-void bitio::stream::close() {
-    _mutex.lock();
-    commit();
-    if (_file) {
-        std::fclose(_file);
-    }
     _mutex.unlock();
 }
 
@@ -287,7 +279,23 @@ uint8_t bitio::stream::fetch_next_byte() {
 }
 
 bitio::stream::~stream() {
+    _mutex.lock();
+    commit();
     if (_file) {
         delete[] _buffer;
+        std::fclose(_file);
     }
+    _mutex.unlock();
+}
+
+bitio::stream::stream(const std::string &filename, uint64_t buffer_size) {
+    if (!std::filesystem::exists(filename)) {
+        auto tmp = std::fopen(filename.c_str(), "a");
+        std::fclose(tmp);
+    }
+
+    _file = std::fopen(filename.c_str(), "rb+");
+    _buffer_size = buffer_size;
+    _buffer = new uint8_t [buffer_size];
+    _current_buffer_size = std::fread(_buffer, 1, buffer_size, _file);
 }

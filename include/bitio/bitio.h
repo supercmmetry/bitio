@@ -50,7 +50,7 @@ namespace bitio {
         uint64_t _byte_head{};
         uint8_t _bit_head{};
 
-        FILE *_file;
+        FILE *_file{};
 
         bool _requires_commit{};
 
@@ -64,6 +64,10 @@ namespace bitio {
 
         inline uint8_t fetch_next_byte();
     public:
+        stream() = default;
+
+        stream(const std::string &filename, uint64_t buffer_size = BITIO_BUFFER_SIZE);
+
         stream(FILE *file, uint64_t buffer_size = BITIO_BUFFER_SIZE);
 
         stream(uint8_t *raw, uint64_t buffer_size);
@@ -82,7 +86,6 @@ namespace bitio {
 
         void flush();
 
-        void close();
     };
 }
 
