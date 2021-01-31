@@ -13,7 +13,9 @@ target_include_directories(bitio
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-enable_testing()
-add_subdirectory(tests)
-add_subdirectory(benchmarks)
+if (${BITIO_DEVEL})
+    enable_testing()
+    add_subdirectory(tests)
+    add_subdirectory(benchmarks)
+endif ()
 
