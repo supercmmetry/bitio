@@ -89,9 +89,7 @@ bitio::stream::stream(uint8_t *raw, uint64_t buffer_size) {
 }
 
 void bitio::stream::flush() {
-    _mutex.lock();
     commit();
-    _mutex.unlock();
 }
 
 uint64_t bitio::stream::size() {
@@ -99,11 +97,8 @@ uint64_t bitio::stream::size() {
         return _buffer_size;
     }
 
-    _mutex.lock();
     std::fseek(_file, 0, SEEK_END);
     uint64_t fsize = std::ftell(_file);
-    _mutex.unlock();
-
     return fsize;
 }
 
@@ -111,8 +106,6 @@ uint64_t bitio::stream::read(uint8_t n) {
     if (n == 0) {
         return 0;
     }
-
-    _mutex.lock();
 
     uint64_t value = 0;
     uint8_t nbytes = n >> 3;
@@ -163,7 +156,6 @@ uint64_t bitio::stream::read(uint8_t n) {
         _bit_head += nbits;
     }
 
-    _mutex.unlock();
     return value;
 }
 
@@ -177,22 +169,16 @@ uint8_t bitio::stream::read_next_byte() {
 }
 
 void bitio::stream::seek_to(uint64_t n) {
-    _mutex.lock();
-
     uint64_t nbytes = n >> 3;
     uint64_t nbits = n & 0x7;
     _byte_head = nbytes;
     _bit_head = nbits;
-
-    _mutex.unlock();
 }
 
 void bitio::stream::seek(int64_t n) {
     if (n == 0) {
         return;
     }
-
-    _mutex.lock();
 
     if (_bit_head == 8) {
         _byte_head++;
@@ -229,8 +215,6 @@ void bitio::stream::seek(int64_t n) {
             _bit_head = 8 - nbits + _bit_head;
         }
     }
-
-    _mutex.unlock();
 }
 
 void bitio::stream::write(uint64_t obj, uint8_t n) {
@@ -242,7 +226,6 @@ void bitio::stream::write(uint64_t obj, uint8_t n) {
     }
 
     obj <<= (0x40 - n);
-    _mutex.lock();
     uint8_t patch_byte = fetch_next_byte();
     bool residual = false;
 
@@ -264,9 +247,6 @@ void bitio::stream::write(uint64_t obj, uint8_t n) {
     if (residual) {
         write_byte(_byte_head, patch_byte);
     }
-
-
-    _mutex.unlock();
 }
 
 uint8_t bitio::stream::fetch_next_byte() {
@@ -279,13 +259,11 @@ uint8_t bitio::stream::fetch_next_byte() {
 }
 
 bitio::stream::~stream() {
-    _mutex.lock();
     commit();
     if (_file) {
         delete[] _buffer;
         std::fclose(_file);
     }
-    _mutex.unlock();
 }
 
 bitio::stream::stream(const std::string &filename, uint64_t buffer_size) {

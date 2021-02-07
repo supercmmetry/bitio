@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <exception>
 #include <string>
-#include <mutex>
 
 #define BITIO_BUFFER_SIZE 0x20000
 
@@ -45,7 +44,6 @@ namespace bitio {
         uint64_t _buffer_offset{};
         uint64_t _buffer_size{};
         uint64_t _current_buffer_size{};
-        std::mutex _mutex{};
 
         uint64_t _byte_head{};
         uint8_t _bit_head{};
