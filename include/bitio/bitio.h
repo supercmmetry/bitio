@@ -51,6 +51,7 @@ namespace bitio {
         FILE *_file{};
 
         bool _requires_commit{};
+        bool _reached_eof{};
 
         inline void commit();
 

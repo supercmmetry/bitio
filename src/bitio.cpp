@@ -23,7 +23,19 @@ uint8_t bitio::stream::read_byte(uint64_t global_offset, bool capture_eof) {
             _current_buffer_size = std::fread(_buffer, 1, _buffer_size, _file);
             _buffer_offset = offset;
         } else {
-            throw bitio_exception("EOF encountered");
+            if (_reached_eof) {
+                throw bitio_exception("EOF encountered");
+            }
+
+            if (global_offset == _buffer_size) {
+                _reached_eof = true;
+            } else {
+                throw bitio_exception("EOF encountered");
+            }
+        }
+    } else {
+        if (!_file) {
+            _reached_eof = false;
         }
     }
 

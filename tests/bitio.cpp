@@ -810,3 +810,32 @@ TEST(BitioTest, seek_to_write_read_4) {
     stream->seek_to(0);
     ASSERT_EQ(stream->read(0x8), 0x13);
 }
+
+TEST(BitioTest, raw_buffer_1) {
+    auto raw = new uint8_t[20];
+    auto stream = bitio::stream(raw, 20);
+
+    for (int i = 0; i < 20; i++) {
+        stream.write(1, 0x8);
+    }
+
+    stream.seek_to(0);
+
+    for (int i = 0; i < 19; i++) {
+        stream.write(1, 0x8);
+    }
+
+    stream.write(1, 0x1);
+
+    stream.seek_to(0);
+    stream.seek(20 * 8);
+    stream.seek(-20 * 8);
+
+    for (int i = 0; i < 19; i++) {
+        ASSERT_EQ(stream.read(0x8), 1);
+    }
+
+    ASSERT_EQ(stream.read(0x8), 129);
+
+    delete[] raw;
+}
